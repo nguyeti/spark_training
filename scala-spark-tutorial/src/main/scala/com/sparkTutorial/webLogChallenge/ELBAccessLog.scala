@@ -1,36 +1,14 @@
 package com.sparkTutorial.webLogChallenge
 
-import java.io.Serializable
-import java.util.logging.Level
-import java.util.logging.Logger
-import java.util.regex.Matcher
+import java.util.logging.{Level, Logger}
+
 import java.util.regex.Pattern
 
 import org.apache.spark.sql.Row
 
-
-/*
- * timestamp 
- * elb 
- * client:port 
- * backend:port 
- * request_processing_time 
- * backend_processing_time 
- * response_processing_time 
- * elb_status_code 
- * backend_status_code 
- * received_bytes 
- * sent_bytes 
- * "request" 
- * "user_agent"
- * ssl_cipher 
- * ssl_protocol
- * 
- */
 object ELBAccessLog {
   private val logger = Logger.getLogger("Access")
   private val LOG_ENTRY_PATTERN = "^(\\S+) (\\S+) (\\S+):(\\S+) ([^ ]*)[:-]([0-9]*) ([-.0-9]*) ([-.0-9]*) ([-.0-9]*) (|[-0-9]*) (-|[-0-9]*) ([-0-9]*) ([-0-9]*) \"([^ ]*) ([^ ]*) (- |[^ ]*)\" \"([^\"]*)\" ([A-Z0-9-]+) ([A-Za-z0-9.-]*)$"
- // private val LOG_ENTRY_PATTERN = "([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*):([0-9]*) ([^ ]*)[:-]([0-9]*) ([-.0-9]*) ([-.0-9]*) ([-.0-9]*) (|[-0-9]*) (-|[-0-9]*) ([-0-9]*) ([-0-9]*) \\\"([^ ]*) ([^ ]*) (- |[^ ]*)\\\" \\\"([^\\\"]*)\\\" ([A-Z0-9-]+) ([A-Za-z0-9.-]*)"
   private val PATTERN = Pattern.compile(LOG_ENTRY_PATTERN)
 
   def parseFromLogLine(logline: String): Row = {
@@ -64,23 +42,24 @@ object ELBAccessLog {
 //    println("sslProtocol " +m.group(19))
     Row(
       m.group(1), // timestamp
-      m.group(2), // elb name
+//      m.group(2), // elb name
       m.group(3), // client ip
-      m.group(4).toInt, // client port
-      if (m.group(5) == "") null else m.group(5), // target ip
-      if (m.group(6) == "") null else m.group(6), // target port
-      m.group(7).toFloat, // requestProcessingTime
-      m.group(8).toFloat, // backendProcessingTime
-      m.group(9).toFloat, // responseProcessingTime
-      m.group(10).toInt, // elbStatusCode
-      m.group(11).toInt, // backendStatusCode
-      m.group(12).toLong, // receivedBytes
-      m.group(13).toLong, // sentBytes
-      m.group(14), // request_verb
-      m.group(15), // request_url
-      m.group(16), // request_protocol
-      m.group(17), // user agent
-      m.group(18), // ssl Cipher
-      m.group(19)) // ssl protocol
+//      m.group(4).toInt, // client port
+//      if (m.group(5) == "") null else m.group(5), // target ip
+//      if (m.group(6) == "") null else m.group(6), // target port
+//      m.group(7).toFloat, // requestProcessingTime
+//      m.group(8).toFloat, // backendProcessingTime
+//      m.group(9).toFloat, // responseProcessingTime
+//      m.group(10).toInt, // elbStatusCode
+//      m.group(11).toInt, // backendStatusCode
+//      m.group(12).toLong, // receivedBytes
+//      m.group(13).toLong, // sentBytes
+//      m.group(14), // request_verb
+      m.group(15) // request_url
+//      m.group(16), // request_protocol
+//      m.group(17), // user agent
+//      m.group(18), // ssl Cipher
+//      m.group(19)) // ssl protocol
+    )
   }
 }
