@@ -61,7 +61,8 @@ object WebLogChallenge {
         df
           .select("timestampStr", "clientIpAddress", "request_url")
           .withColumn("timestamp", df("timestampStr").cast(TimestampType))
-          .orderBy("clientIpAddress", "timestamp").write.mode(SaveMode.Append).format("parquet").save("out/userLog.parquet")
+          .orderBy("clientIpAddress", "timestamp")
+          .write.mode(SaveMode.Append).format("parquet").save("out/userLog.parquet")
       }
     }
     parquetFileDF = sparkSession.read.parquet("out/userLog.parquet")
