@@ -70,7 +70,9 @@ object WebLogChallenge {
       }
     }
     // Read the parquet file
-    parquetFileDF = sparkSession.read.parquet("out/userLog.parquet")
+    parquetFileDF = sparkSession
+      .read
+      .parquet("out/userLog.parquet")
 
     // Create a Window spec object
     val wSpec = Window
@@ -108,10 +110,14 @@ object WebLogChallenge {
     totalSessionTime.cache()
 
     // select distinct total_session_time per session id
-    val timeBySession = totalSessionTime.select("session_id", "clientIpAddress", "total_session_time").distinct().cache()
+    val timeBySession = totalSessionTime
+      .select("session_id", "clientIpAddress", "total_session_time")
+      .distinct()
+      .cache()
 
     // Overall average session time
-    val avgSessionTime = timeBySession.select(avg("total_session_time"))
+    val avgSessionTime = timeBySession
+      .select(avg("total_session_time"))
     //    avgSessionTime.explain()
     avgSessionTime.show()
     
