@@ -6,7 +6,7 @@ import java.util.regex.Pattern
 
 import org.apache.spark.sql.Row
 
-object ELBAccessLog {
+object LogLine {
   private val logger = Logger.getLogger("Access")
   private val LOG_ENTRY_PATTERN = "^(\\S+) (\\S+) (\\S+):(\\S+) ([^ ]*)[:-]([0-9]*) ([-.0-9]*) ([-.0-9]*) ([-.0-9]*) (|[-0-9]*) (-|[-0-9]*) ([-0-9]*) ([-0-9]*) \"([^ ]*) ([^ ]*) (- |[^ ]*)\" \"([^\"]*)\" ([A-Z0-9-]+) ([A-Za-z0-9.-]*)$"
   private val PATTERN = Pattern.compile(LOG_ENTRY_PATTERN)
@@ -21,25 +21,6 @@ object ELBAccessLog {
       throw new RuntimeException("Error parsing logline")
     }
 
-//    println(m.group(1))
-//    println(m.group(2))
-//    println(m.group(3))
-//    println(m.group(4))
-//    println("target ip " + m.group(5))
-//    println("backend port " +m.group(6))
-//    println("requestProcessingTime " +m.group(7))
-//    println("backendProcessingTime " +m.group(8))
-//    println("responseProcessingTime " +m.group(9))
-//    println("elbStatusCode " +m.group(10))
-//    println("backendStatusCode " +m.group(11))
-//    println("receivedBytes " +m.group(12))
-//    println("sentBytes " +m.group(13))
-//    println("request " +m.group(14))
-//    println("request " +m.group(15))
-//    println("request " +m.group(16))
-//    println("userAgent " +m.group(17))
-//    println("sslCipher " +m.group(18))
-//    println("sslProtocol " +m.group(19))
     Row(
       m.group(1), // timestamp
 //      m.group(2), // elb name

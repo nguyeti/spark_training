@@ -29,9 +29,11 @@ object WebLogChallenge {
         val webLogRdd = sc.textFile("in/2015_07_22_mktplace_shop_web_log_sample.log")
         //    val webLogRdd = sc.textFile("in/wrong_line.log")
         println("rdd Count: " + webLogRdd.count())
+
         val webLogLines = webLogRdd.map(line => {
-          ELBAccessLog.parseFromLogLine(line)
+          LogLine.parseFromLogLine(line)
         }).cache()
+
         val df = sparkSession.createDataFrame(webLogLines,
           StructType(
             Seq(
@@ -57,7 +59,9 @@ object WebLogChallenge {
             )
           )
         ).cache()
+
         println("df count: " + df.count())
+        // Save the DF in parquet
         df
           .select("timestampStr", "clientIpAddress", "request_url")
           .withColumn("timestamp", df("timestampStr").cast(TimestampType))
@@ -65,42 +69,62 @@ object WebLogChallenge {
           .write.mode(SaveMode.Append).format("parquet").save("out/userLog.parquet")
       }
     }
+    // Read the parquet file
     parquetFileDF = sparkSession.read.parquet("out/userLog.parquet")
-    val w = Window.partitionBy("clientIpAddress").orderBy("timestamp")
-    val lagDF = parquetFileDF.withColumn("lag", lag("timestamp", 1).over(w))
-    lagDF
-      .select("timestamp", "lag", "clientIpAddress", "request_url").cache()
-    //            .show(100, false)
 
-    val diff_in_sec_df = lagDF.withColumn("diff_in_secs", unix_timestamp(col("timestamp")) - unix_timestamp(col("lag"))).cache()
-    //        diff_in_sec_df.show(20, 0)
+    // Create a Window spec object
+    val wSpec = Window
+      .partitionBy("clientIpAddress")
+      .orderBy("timestamp")
 
-    val new_session_flag_DF = diff_in_sec_df.withColumn("new_session", when(diff_in_sec_df("diff_in_secs") >= 30 * 60, 1).otherwise(0)).cache()
-    //         new_session_flag_DF.show(10000, 0)
-    //
-    val wSpec = Window.partitionBy("clientIpAddress").orderBy("timestamp")
-    val df4 = new_session_flag_DF
-      .withColumn("session_id", concat(concat(new_session_flag_DF("clientIpAddress"), lit("_")), (sum("new_session")).over(wSpec)))
-      .select("session_id", "timestamp", "clientIpAddress", "request_url", "diff_in_secs")
+    // Create a new lag column in the DF
+    val lagDF = parquetFileDF
+      .withColumn("lag", lag("timestamp", 1).over(wSpec))
+
+    // Calculate the difference in seconds between the timestamp and lag columns for each row
+    val difference = unix_timestamp(col("timestamp")) - unix_timestamp(col("lag"))
+    val differenceInSecDf = lagDF
+      .withColumn("differenceInSecs", difference)
       .cache()
 
-    val wSpec2 = Window.partitionBy("session_id")
-    val avg_time_by_session = df4.withColumn("total_session_time", sum("diff_in_secs").over(wSpec2))
-    avg_time_by_session.cache()
+    // Create a flag for a new session
+    val newSessionFlagDf = differenceInSecDf
+      .withColumn("new_session", when(differenceInSecDf("differenceInSecs") >= 30 * 60, 1).otherwise(0))
+      .cache()
+    
+    val wSpec2 = Window
+      .partitionBy("clientIpAddress")
+      .orderBy("timestamp")
 
-    val time_by_session = avg_time_by_session.select("session_id", "clientIpAddress", "total_session_time").distinct().cache()
+    // Create a DF with session ids assigned
+    val dfWithSessionId = newSessionFlagDf
+      .withColumn("session_id", concat(concat(newSessionFlagDf("clientIpAddress"), lit("_")), (sum("new_session")).over(wSpec2)))
+      .select("session_id", "timestamp", "clientIpAddress", "request_url", "differenceInSecs")
+      .cache()
 
-    val avg_session_time = time_by_session.select(avg("total_session_time"))
-    //    avg_session_time.explain()
-    avg_session_time.show()
+    // Calculate the total session duration per session id
+    val wSpec3 = Window.partitionBy("session_id")
+    val totalSessionTime = dfWithSessionId.withColumn("total_session_time", sum("differenceInSecs").over(wSpec3))
+    totalSessionTime.cache()
 
-    val unique_url_per_session = df4
-      //      .filter(df4("clientIpAddress") === "123.242.248.130")
+    // select distinct total_session_time per session id
+    val timeBySession = totalSessionTime.select("session_id", "clientIpAddress", "total_session_time").distinct().cache()
+
+    // Overall average session time
+    val avgSessionTime = timeBySession.select(avg("total_session_time"))
+    //    avgSessionTime.explain()
+    avgSessionTime.show()
+    
+    // Unique URL count per session
+    val uniqueUrlPerSession = dfWithSessionId
+      //      .filter(dfWithSessionId("clientIpAddress") === "123.242.248.130")
       .groupBy("session_id")
       .agg(countDistinct("request_url"))
       .show(100, 0)
-    val most_engaged_users = time_by_session.orderBy(desc("total_session_time"))
-    most_engaged_users.show(10, 0)
-
+    
+    // Most engaged users
+    val mostEngagedUsers = timeBySession
+      .orderBy(desc("total_session_time"))
+    mostEngagedUsers.show(10, 0)
   }
 }
