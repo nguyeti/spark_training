@@ -6,6 +6,10 @@ import java.util.regex.Pattern
 
 import org.apache.spark.sql.Row
 
+/**
+  * Object used to parse a line in the log file and create a Row object
+  *
+  */
 object LogLine {
   private val logger = Logger.getLogger("Access")
   private val LOG_ENTRY_PATTERN = "^(\\S+) (\\S+) (\\S+):(\\S+) ([^ ]*)[:-]([0-9]*) ([-.0-9]*) ([-.0-9]*) ([-.0-9]*) (|[-0-9]*) (-|[-0-9]*) ([-0-9]*) ([-0-9]*) \"([^ ]*) ([^ ]*) (- |[^ ]*)\" \"([^\"]*)\" ([A-Z0-9-]+) ([A-Za-z0-9.-]*)$"

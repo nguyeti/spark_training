@@ -7,7 +7,11 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 
-
+/**
+  * Main object class.
+  * - Read and parse the log file and save the logs data in parquet.
+  * - Read data from parquet and do some calculations
+  */
 object WebLogChallenge {
   def main(args: Array[String]) {
     Logger.getLogger("org").setLevel(Level.ERROR)
